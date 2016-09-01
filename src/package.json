@@ -1,0 +1,11 @@
+{
+  "name": "drclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.html",
+  "author": "cainvampyr@gmail.com",
+  "window": {
+    "frame": true,
+    "toolbar": true
+  }
+}

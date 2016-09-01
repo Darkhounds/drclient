@@ -1,0 +1,8 @@
+.idea
+node_modules
+build
+cache
+dist/**/*.zip
+*.iml
+*.iws
+*.ipr

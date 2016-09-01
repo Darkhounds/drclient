@@ -1,0 +1,29 @@
+{
+  "name": "drclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "bundle": "nwbuild -o ./build --cacheDir ./cache -v latest -p win64,osx64,linux64 src",
+    "package-win": "node scripts/package.js win",
+    "package-osx": "node scripts/package.js osx",
+    "package-linux": "node scripts/package.js linux",
+    "package": "npm run package-win && npm run package-osx && npm run package-linux"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@gitlab.com/darkhounds/drclient.git"
+  },
+  "author": "cainvampyr@gmail.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://gitlab.com/darkhounds/drclient/issues"
+  },
+  "homepage": "https://gitlab.com/darkhounds/drclient#README",
+  "devDependencies": {
+    "fstream": "^1.0.10",
+    "nw": "^0.17.0",
+    "nw-builder": "^3.0.0",
+    "tar": "^2.2.1"
+  }
+}
