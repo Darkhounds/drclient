@@ -16,6 +16,7 @@ var state = CONNECT;
 
 var HOST = 'eaccess.play.net';
 var PORT = 7900;
+
 var game = process.argv[2] || 'DR';
 var username = process.argv[3];
 var password = process.argv[4];
@@ -39,13 +40,14 @@ if (isMissingArguments) {
 	process.exit();
 }
 
-var client = null;
+var authServer = null;
+var config = null;
 
 function connect () {
 	if (state === CONNECT) {
-		client = new net.Socket();
-		client.on('data', _handleResponse);
-		client.connect(PORT, HOST, _handleResponse);
+		authServer = new net.Socket();
+		authServer.on('data', _handleResponse);
+		authServer.connect(PORT, HOST, _handleResponse);
 	}
 }
 
@@ -69,16 +71,16 @@ function _handleConnection() {
 	console.log('CONNECTED:', HOST + ':' + PORT);
 	state = HANDSHAKE;
 
-	client.write('K\n');
+	authServer.write('K\n');
 }
 
 function _handleHandshake(data) {
 	console.log('HANDSHAKED:', data.toString().trim());
 	state = AUTHENTICATE;
 
-	client.write('A\t' + username + '\t');
-	client.write(maskPassword(password, data));
-	client.write('\n');
+	authServer.write('A\t' + username + '\t');
+	authServer.write(maskPassword(password, data));
+	authServer.write('\n');
 }
 
 function _handleAuthenticate(data) {
@@ -92,7 +94,7 @@ function _handleAuthenticate(data) {
 		state = REQUEST_GAMES;
 		var key = message.split('\t')[3];
 
-		client.write('M\n');
+		authServer.write('M\n');
 	}
 }
 
@@ -100,14 +102,14 @@ function _handleRequestGames(data) {
 	console.log('REQUESTED GAMES:', data.toString().trim());
 	state = SELECT_GAME;
 
-	client.write('N\tDR\n');
+	authServer.write('N\tDR\n');
 }
 
 function _handleSelectGame(data) {
 	console.log('SELECTED GAME:', data.toString().trim());
 	state = REQUEST_ACCOUNT;
 
-	client.write('F\t' + game + '\n');
+	authServer.write('F\t' + game + '\n');
 }
 
 function _handleRequestAccount(data) {
@@ -121,7 +123,7 @@ function _handleRequestAccount(data) {
 	} else {
 		state = REQUEST_GAME_META;
 
-		client.write('G\tDR\n');
+		authServer.write('G\tDR\n');
 	}
 }
 
@@ -129,14 +131,14 @@ function _handleRequestGameMeta(data) {
 	console.log('REQUESTED GAME META:', data.toString().trim());
 	state = REQUEST_GAME_COSTS;
 
-	client.write('P\tDR\n');
+	authServer.write('P\tDR\n');
 }
 
 function _handleRequestGameCosts(data) {
 	console.log('REQUESTED GAME COSTS:', data.toString().trim());
 	state = REQUEST_CHARACTERS;
 
-	client.write('C\n');
+	authServer.write('C\n');
 }
 
 function _handleRequestCharacters(data) {
@@ -145,7 +147,7 @@ function _handleRequestCharacters(data) {
 
 	var characters = _parseCharacters(data);
 
-	client.write('L\t' + characters[character.toLowerCase()] + '\tSTORM\n');
+	authServer.write('L\t' + characters[character.toLowerCase()] + '\tSTORM\n');
 }
 
 function _parseCharacters(data){
@@ -178,13 +180,39 @@ function _handleSelectCharacter(data) {
 	console.log('SELECTED CHARACTER:', data.toString().trim());
 	state = DISCONNECT;
 
+	config = _parseCharacterConfig(data);
+	/*
+	 { KEY: '2df5559e2d478d19e79bce8209b84330',
+	 GAMEPORT: '11024',
+	 GAMEHOST: 'dr.simutronics.net',
+	 GAMEFILE: 'STORMFRONT.EXE',
+	 FULLGAMENAME: 'StormFront',
+	 GAMECODE: 'DR',
+	 GAME: 'STORM',
+	 UPPORT: '5535' }
+	 */
+
 	_handleResponse(true);
+}
+
+function _parseCharacterConfig(data) {
+	var values = data.toString().trim().split('\t').reverse();
+
+	var config = {};
+	values.forEach(function (pair){
+		var parts = pair.split('=');
+		if (parts.length === 2) {
+			config[parts[0]] = parts[1];
+		}
+	});
+
+	return config;
 }
 
 function _handleDisconnect(data) {
 	console.log('CONNECTION ' + (data?'SUCCESSFUL!':'FAILED!'));
 
-	client.end();
+	authServer.end();
 }
 
 function maskPassword(password, mask) {
