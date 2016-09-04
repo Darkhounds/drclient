@@ -16,8 +16,28 @@ var state = CONNECT;
 
 var HOST = 'eaccess.play.net';
 var PORT = 7900;
-var username = process.argv[2];
-var password = process.argv[3];
+var game = process.argv[2] || 'DR';
+var username = process.argv[3];
+var password = process.argv[4];
+var character = process.argv[5];
+
+var isMissingArguments = false;
+if (!username) {
+	console.log('Missing argument - Username!');
+	isMissingArguments = true;
+}
+if (!password) {
+	console.log('Missing argument - Password!');
+	isMissingArguments = true;
+}
+if (!character) {
+	console.log('Missing argument - Character!');
+	isMissingArguments = true;
+}
+
+if (isMissingArguments) {
+	process.exit();
+}
 
 var client = null;
 
@@ -87,7 +107,7 @@ function _handleSelectGame(data) {
 	console.log('SELECTED GAME:', data.toString().trim());
 	state = REQUEST_ACCOUNT;
 
-	client.write('F\tDR\n');
+	client.write('F\t' + game + '\n');
 }
 
 function _handleRequestAccount(data) {
@@ -123,7 +143,35 @@ function _handleRequestCharacters(data) {
 	console.log('REQUESTED CHARACTERS:', data.toString().trim());
 	state = SELECT_CHARACTER;
 
-	client.write('L\tW_MALLAKAY_001\tSTORM\n');
+	var characters = _parseCharacters(data);
+
+	client.write('L\t' + characters[character.toLowerCase()] + '\tSTORM\n');
+}
+
+function _parseCharacters(data){
+	var values = data.toString().trim().split('\t').reverse();
+	var characters = {};
+	var characterName = '';
+	var isCharacterName = true;
+	var isInvalid = false;
+	values.forEach(function(value) {
+		if (isInvalid) {
+			isInvalid = false;
+			isCharacterName = true;
+		} else if(isCharacterName) {
+			characterName = value.toLowerCase();
+			if (characterName.length <= 1) {
+				isInvalid = true;
+			} else {
+				isCharacterName = false;
+			}
+		} else {
+			characters[characterName] = value;
+			isCharacterName = true;
+		}
+	});
+
+	return characters;
 }
 
 function _handleSelectCharacter(data) {

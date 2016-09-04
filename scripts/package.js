@@ -1,26 +1,27 @@
 var target = process.argv[2] || 'win';
 
-var tar = require("tar")
-	, fstream = require("fstream")
-	, fs = require("fs");
+var fs = require('fs');
+var archiver = require('archiver');
 
-var dirDest = fs.createWriteStream('./dist/' + target + '/drclient.zip');
+var targetPath = './dist/' + target + '/drclient.zip';
+var output = fs.createWriteStream(targetPath);
+var zipArchive = archiver('zip', {level: 9});
 
-var packer = tar.Pack({ noProprietary: true, fromBase: true })
-	.on('error', onError)
-	.on('end', onEnd);
 
-// This must be a "directory"
-fstream.Reader({ path: './build/drclient/' + target + '64', type: "Directory" })
-	.on('error', onError)
-	.pipe(packer)
-	.pipe(dirDest);
+output.on('close', function() {
+	console.log('done with the zip: ', targetPath);
+});
 
-function onError(err) {
-	console.error('An error occurred:', err);
-}
+zipArchive.pipe(output);
 
-function onEnd() {
-	console.log('Packed!');
-}
+zipArchive.bulk([
+	{ src: [ '**/*' ], cwd: './build/drclient/' + target + '64/', expand: true }
+]);
 
+zipArchive.finalize(function(err, bytes) {
+	if(err) {
+		throw err;
+	}
+
+	console.log('done:', bytes);
+});
