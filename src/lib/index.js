@@ -43,15 +43,32 @@ if (isMissingArguments) {
 var authServer = null;
 var config = null;
 
-function connect () {
+function authenticate () {
 	if (state === CONNECT) {
 		authServer = new net.Socket();
-		authServer.on('data', _handleResponse);
-		authServer.connect(PORT, HOST, _handleResponse);
+		authServer.on('data', _handleAuthResponse);
+		authServer.connect(PORT, HOST, _handleAuthResponse);
 	}
 }
 
-function _handleResponse(data) {
+/*
+ K
+ |mQaKnVXqq\HirIFolZiwM]_cCnxSzyo
+ A.MALLAKAY...f.s.n
+ A.MALLAKAY.KEY.b75f964dc0c5740a3d202522324decc3.CAIN VAMPYR
+ G.DR
+ G.DragonRealms.FREE_TO_PLAY.0..ROOT=sgc/dr.MKTG=info/default.htm.MAIN=main/default.htm.GAMEINFO=information/default.htm.PLAYINFO=main/default.htm.MSGBRD=message/default.htm.CHAT=chat/default.htm.FILES=files/default.htm.COMMING=main/default.htm.STUFF=main/comingsoon.htm.BILLINGFAQ=account/default.htm.BILLINGOPTIONS=offer/payment.htm.LTSIGNUP=https://account.play.net/simunet_private/cc-signup.cgi.BILLINGINFO=http://account.play.net/simunet_private/acctInfo.cgi?key={KEY}&SITE=sgc.GAMES=main/games.htm.FEEDBACK=feedback/default.htm.MAILFAIL=/sgc/dr/feedback/mailfail.htm.MAILSUCC=/sgc/dr/feedback/mailsent.htm.MAILSERVE=SGC.SIGNUP=http://ad-track.play.net/sgc/signup_redirect.cgi.SIGNUPA=http://ad-track.play.net/sgc/signup_again.cgi
+ B
+ B.FREE_TO_PLAY
+ C
+ C.1.1.0.0.W_MALLAKAY_001.Mallakay
+ L.W_MALLAKAY_001.PLAY
+ L.OK.UPPORT=5535.GAME=WIZ.GAMECODE=DR.FULLGAMENAME=Wizard Front End.GAMEFILE=WIZARD.EXE.GAMEHOST=dr.simutronics.net.GAMEPORT=4901.KEY=b75f964dc0c5740a3d202522324decc3
+ */
+
+
+
+function _handleAuthResponse(data) {
 	switch (state) {
 		case CONNECT: _handleConnection(); break;
 		case HANDSHAKE: _handleHandshake(data); break;
@@ -88,13 +105,17 @@ function _handleAuthenticate(data) {
 	var message = data.toString();
 	if (message.indexOf('\tKEY\t') < 0) {
 		state = DISCONNECT;
+		_handleAuthResponse();
 
-		_handleResponse();
 	} else {
-		state = REQUEST_GAMES;
-		var key = message.split('\t')[3];
+		state = SELECT_GAME;
 
-		authServer.write('M\n');
+		authServer.write('G\t' + game + '\n');
+
+		// state = REQUEST_GAMES;
+		// var key = message.split('\t')[3];
+		//
+		// authServer.write('M\n');
 	}
 }
 
@@ -109,7 +130,11 @@ function _handleSelectGame(data) {
 	console.log('SELECTED GAME:', data.toString().trim());
 	state = REQUEST_ACCOUNT;
 
-	authServer.write('F\t' + game + '\n');
+	authServer.write('B\n');
+
+	// state = REQUEST_ACCOUNT;
+	//
+	// authServer.write('F\t' + game + '\n');
 }
 
 function _handleRequestAccount(data) {
@@ -119,11 +144,15 @@ function _handleRequestAccount(data) {
 	if (status === 'EXPIRED') {
 		state = DISCONNECT;
 
-		_handleResponse();
+		_handleAuthResponse();
 	} else {
-		state = REQUEST_GAME_META;
+		state = REQUEST_CHARACTERS;
 
-		authServer.write('G\tDR\n');
+		authServer.write('C\n');
+
+		// state = REQUEST_GAME_META;
+		//
+		// authServer.write('G\t' + game + '\n');
 	}
 }
 
@@ -147,7 +176,7 @@ function _handleRequestCharacters(data) {
 
 	var characters = _parseCharacters(data);
 
-	authServer.write('L\t' + characters[character.toLowerCase()] + '\tSTORM\n');
+	authServer.write('L\t' + characters[character.toLowerCase()] + '\tPLAY\n');
 }
 
 function _parseCharacters(data){
@@ -190,9 +219,19 @@ function _handleSelectCharacter(data) {
 	 GAMECODE: 'DR',
 	 GAME: 'STORM',
 	 UPPORT: '5535' }
+
+	 { KEY: 'b75f964dc0c5740a3d202522324decc3',
+	 GAMEPORT: '4901',
+	 GAMEHOST: 'dr.simutronics.net',
+	 GAMEFILE: 'WIZARD.EXE',
+	 FULLGAMENAME: 'Wizard Front End',
+	 GAMECODE: 'DR',
+	 GAME: 'WIZ',
+	 UPPORT: '5535' }
 	 */
 
-	_handleResponse(true);
+	_handleAuthResponse(true);
+	connect();
 }
 
 function _parseCharacterConfig(data) {
@@ -234,5 +273,51 @@ function maskPassword(password, mask) {
 	return masked;
 }
 
-connect();
+
+var gameServer = null;
+
+function connect() {
+	gameServer = new net.Socket();
+	gameServer.on('data', _handleGameResponse);
+	gameServer.connect(config.GAMEPORT, config.GAMEHOST, function () {
+		console.log('Game Connection Established with:', config.GAMEPORT, config.GAMEHOST);
+		gameServer.write(config.KEY + '\n');
+		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\n');
+
+		// /FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML
+		// /FE:WIZARD /VERSION:2.02 /P:WIN32
+
+		//
+	});
+}
+
+var gameHandshake = 0;
+var gameMessage = '';
+function _handleGameResponse(data) {
+	if (gameHandshake < 3) {
+		gameHandshake++;
+	}
+
+	if (gameHandshake === 2) {
+		gameServer.write('GOOD\n');
+	} else {
+		gameMessage += data?data.toString():'';
+		var isFinished = (gameMessage.charAt(gameMessage.length - 1) === '\n');
+		if (isFinished) {
+			gameMessage = gameMessage.trim();
+
+			console.log('Data Long:', gameMessage);
+
+			if (gameMessage.length > 103){
+				console.log('Data Short:', gameMessage.substr(0, 50) + '...' + gameMessage.substr(-50));
+			}
+
+			gameMessage = '';
+		}
+
+		gameServer.write('exit\n');
+	}
+}
+
+authenticate();
 
