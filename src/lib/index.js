@@ -66,8 +66,6 @@ function authenticate () {
  L.OK.UPPORT=5535.GAME=WIZ.GAMECODE=DR.FULLGAMENAME=Wizard Front End.GAMEFILE=WIZARD.EXE.GAMEHOST=dr.simutronics.net.GAMEPORT=4901.KEY=b75f964dc0c5740a3d202522324decc3
  */
 
-
-
 function _handleAuthResponse(data) {
 	switch (state) {
 		case CONNECT: _handleConnection(); break;
@@ -119,11 +117,12 @@ function _handleAuthenticate(data) {
 	}
 }
 
+// TODO: this can probably be removed!
 function _handleRequestGames(data) {
 	console.log('REQUESTED GAMES:', data.toString().trim());
 	state = SELECT_GAME;
 
-	authServer.write('N\tDR\n');
+	authServer.write('N\t' + game + '\n');
 }
 
 function _handleSelectGame(data) {
@@ -156,6 +155,7 @@ function _handleRequestAccount(data) {
 	}
 }
 
+// TODO: this can probably be removed!
 function _handleRequestGameMeta(data) {
 	console.log('REQUESTED GAME META:', data.toString().trim());
 	state = REQUEST_GAME_COSTS;
@@ -163,6 +163,7 @@ function _handleRequestGameMeta(data) {
 	authServer.write('P\tDR\n');
 }
 
+// TODO: this can probably be removed!
 function _handleRequestGameCosts(data) {
 	console.log('REQUESTED GAME COSTS:', data.toString().trim());
 	state = REQUEST_CHARACTERS;
@@ -176,7 +177,9 @@ function _handleRequestCharacters(data) {
 
 	var characters = _parseCharacters(data);
 
-	authServer.write('L\t' + characters[character.toLowerCase()] + '\tPLAY\n');
+	// TODO: Need further investigation
+	authServer.write('L\t' + characters[character.toLowerCase()] + '\tSTORM\n');
+	//authServer.write('L\t' + characters[character.toLowerCase()] + '\tPLAY\n');
 }
 
 function _parseCharacters(data){
@@ -273,21 +276,21 @@ function maskPassword(password, mask) {
 	return masked;
 }
 
-
 var gameServer = null;
 
 function connect() {
 	gameServer = new net.Socket();
 	gameServer.on('data', _handleGameResponse);
+
 	gameServer.connect(config.GAMEPORT, config.GAMEHOST, function () {
 		console.log('Game Connection Established with:', config.GAMEPORT, config.GAMEHOST);
 		gameServer.write(config.KEY + '\n');
 		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\n');
+		//gameServer.write('/FE:WIZARD /VERSION:2.02 /P:WIN32' + '\n');
+		startPrompt();
 
 		// /FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML
 		// /FE:WIZARD /VERSION:2.02 /P:WIN32
-
-		//
 	});
 }
 
@@ -306,18 +309,45 @@ function _handleGameResponse(data) {
 		if (isFinished) {
 			gameMessage = gameMessage.trim();
 
-			console.log('Data Long:', gameMessage);
+			console.log(gameMessage.toString());
 
-			if (gameMessage.length > 103){
-				console.log('Data Short:', gameMessage.substr(0, 50) + '...' + gameMessage.substr(-50));
-			}
+			process.stdout.write(command);
 
 			gameMessage = '';
 		}
-
-		gameServer.write('exit\n');
 	}
 }
 
-authenticate();
+var command = '';
+var util = require('util');
+require('tty').setRawMode(true);
+function startPrompt () {
+	console.log('Prompt Initiated');
 
+	process.stdin.resume();
+	process.stdin.setEncoding('utf8');
+	process.stdin.on('data', function (key) {
+		switch (key) {
+			case '\u0003':
+				gameServer.write('exit\n');
+				process.stdin.pause();
+				process.exit();
+				break;
+			case '\n':
+			case '\r':
+				gameServer.write(command + '\n');
+				if (command.toLowerCase() === 'exit') {
+					process.stdin.pause();
+					process.exit();
+				}
+				command = '';
+				break;
+			default:
+				command += key;
+				process.stdout.write(key);
+				break;
+		}
+	});
+}
+
+authenticate();
