@@ -285,33 +285,46 @@ function connect() {
 	});
 }
 
-var gameHandshake = 0;
-var gameMessage = '';
+
+var util = require('util');
+var stripDoubleLineBreaks = require('./utils/strip-double-lines');
+var parseGameMessage = require('./utils/parse-game-message');
+var messageBuffer = '';
 function _handleGameResponse(data) {
-	if (gameHandshake < 4) {
-		gameHandshake++;
-	}
+	messageBuffer = stripDoubleLineBreaks(messageBuffer + (data?data.toString():''));
+	var lastLineBreak = messageBuffer.lastIndexOf('\n');
+	var parsable = (lastLineBreak > -1)?messageBuffer.substr(0, lastLineBreak):'';
+	messageBuffer = (lastLineBreak > -1)?messageBuffer.substr(lastLineBreak):messageBuffer;
 
-	if (gameHandshake === 2) {
-		gameServer.write('GOOD\r\n');
-	} else if (gameHandshake === 3) {
-		startPrompt();
-	} else {
-		gameMessage += data?data.toString():'';
-		var isFinished = (gameMessage.charAt(gameMessage.length - 1) === '\n');
-		if (isFinished) {
-			gameMessage = gameMessage.toString().trim();
-
-			terminal.setPrompt('');
-			terminal.prompt(true);
-			process.stdout.write(gameMessage + '\n');
-			terminal.setPrompt('>>> ');
-			terminal.prompt(true);
-
-			gameMessage = '';
-		}
-	}
+	parsable.split('\n').forEach(function (line) {
+		_parseGameResponse(line);
+	});
 }
+
+var log = true;
+var fs = require('fs');
+if (log) {
+	fs.writeFileSync('./cache/log.raw.txt', '');
+	fs.writeFileSync('./cache/log.parsed.txt', '');
+}
+
+function _parseGameResponse(data) {
+	if (log) fs.appendFileSync('./cache/log.raw.txt', data + '\n');
+	data = parseGameMessage(data.toString().trim());
+	if (log) fs.appendFileSync('./cache/log.parsed.txt', data);
+
+	if (data.indexOf('<settingsInfo') === 0) {
+		gameServer.write('GOOD\r\n');
+		startPrompt();
+	}
+
+	terminal.setPrompt('');
+	terminal.prompt(true);
+	process.stdout.write(data);
+	terminal.setPrompt('>>> ');
+	terminal.prompt(true);
+}
+
 
 var readline = require('readline');
 var terminal = readline.createInterface({
