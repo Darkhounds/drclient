@@ -106,14 +106,9 @@ function _handleAuthenticate(data) {
 		_handleAuthResponse();
 
 	} else {
-		state = SELECT_GAME;
+		state = REQUEST_GAMES;
 
-		authServer.write('G\t' + game + '\n');
-
-		// state = REQUEST_GAMES;
-		// var key = message.split('\t')[3];
-		//
-		// authServer.write('M\n');
+		authServer.write('M\n');
 	}
 }
 
@@ -127,13 +122,13 @@ function _handleRequestGames(data) {
 
 function _handleSelectGame(data) {
 	console.log('SELECTED GAME:', data.toString().trim());
-	state = REQUEST_ACCOUNT;
-
-	authServer.write('B\n');
-
 	// state = REQUEST_ACCOUNT;
 	//
-	// authServer.write('F\t' + game + '\n');
+	// authServer.write('B\n');
+
+	state = REQUEST_ACCOUNT;
+
+	authServer.write('F\t' + game + '\n');
 }
 
 function _handleRequestAccount(data) {
@@ -145,13 +140,13 @@ function _handleRequestAccount(data) {
 
 		_handleAuthResponse();
 	} else {
-		state = REQUEST_CHARACTERS;
-
-		authServer.write('C\n');
-
-		// state = REQUEST_GAME_META;
+		// state = REQUEST_CHARACTERS;
 		//
-		// authServer.write('G\t' + game + '\n');
+		// authServer.write('C\n');
+
+		state = REQUEST_GAME_META;
+
+		authServer.write('G\t' + game + '\n');
 	}
 }
 
@@ -285,68 +280,65 @@ function connect() {
 	gameServer.connect(config.GAMEPORT, config.GAMEHOST, function () {
 		console.log('Game Connection Established with:', config.GAMEPORT, config.GAMEHOST);
 		gameServer.write(config.KEY + '\n');
-		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\n');
+		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\r\n');
 		//gameServer.write('/FE:WIZARD /VERSION:2.02 /P:WIN32' + '\n');
-		startPrompt();
-
-		// /FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML
-		// /FE:WIZARD /VERSION:2.02 /P:WIN32
 	});
 }
 
 var gameHandshake = 0;
 var gameMessage = '';
 function _handleGameResponse(data) {
-	if (gameHandshake < 3) {
+	if (gameHandshake < 4) {
 		gameHandshake++;
 	}
 
 	if (gameHandshake === 2) {
-		gameServer.write('GOOD\n');
+		gameServer.write('GOOD\r\n');
+	} else if (gameHandshake === 3) {
+		startPrompt();
 	} else {
 		gameMessage += data?data.toString():'';
 		var isFinished = (gameMessage.charAt(gameMessage.length - 1) === '\n');
 		if (isFinished) {
-			gameMessage = gameMessage.trim();
+			gameMessage = gameMessage.toString().trim();
 
-			console.log(gameMessage.toString());
-
-			process.stdout.write(command);
+			terminal.setPrompt('');
+			terminal.prompt(true);
+			process.stdout.write(gameMessage + '\n');
+			terminal.setPrompt('>>> ');
+			terminal.prompt(true);
 
 			gameMessage = '';
 		}
 	}
 }
 
-var command = '';
-var util = require('util');
-require('tty').setRawMode(true);
+var readline = require('readline');
+var terminal = readline.createInterface({
+	input: process.stdin,
+	output: process.stdout,
+	terminal: true
+});
 function startPrompt () {
-	console.log('Prompt Initiated');
+	console.log('---------------- Prompt Initiated ---------------- ');
 
-	process.stdin.resume();
-	process.stdin.setEncoding('utf8');
-	process.stdin.on('data', function (key) {
-		switch (key) {
-			case '\u0003':
+	terminal.setPrompt('>>> ');
+	terminal.prompt();
+	terminal.on('line', function (line) {
+		line = line.trim();
+		switch(line) {
+			case 'exit':
 				gameServer.write('exit\n');
-				process.stdin.pause();
-				process.exit();
-				break;
-			case '\n':
-			case '\r':
-				gameServer.write(command + '\n');
-				if (command.toLowerCase() === 'exit') {
-					process.stdin.pause();
-					process.exit();
-				}
-				command = '';
+				process.exit(0);
 				break;
 			default:
-				command += key;
-				process.stdout.write(key);
+				gameServer.write(line + '\n');
 				break;
-		}
+			}
+			terminal.prompt();
+	}).on('close', function () {
+		console.log('Have a great day!');
+		process.exit(0);
 	});
 }
 
