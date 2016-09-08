@@ -1,3 +1,4 @@
+var parseGameMessage = require('./utils/parse-game-message');
 function createServer() {
 	var WebSocketServer = require('ws').Server;
 	var wss = new WebSocketServer({ port: 3010 });
@@ -6,6 +7,8 @@ function createServer() {
 	});
 
 	function createClient(socket) {
+		parseGameMessage.flush();
+
 		var client = {
 			connected: false,
 			connecting: false,
@@ -144,39 +147,34 @@ function _authenticate(client, requestData) {
 	}
 }
 
+var util = require('util');
 function _connect(client) {
 	var gameServer = new net.Socket();
 	gameServer.on('data', _handleGameResponse);
 
 	gameServer.connect(client.config.GAMEPORT, client.config.GAMEHOST, function () {
 		gameServer.write(client.config.KEY + '\n');
-		gameServer.write('/FE:WebFE /VERSION:0.2015.9.29.0 /P:WIN_XP  /XML' + '\n');
-		//gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\n');
+		//gameServer.write('/FE:WebFE /VERSION:0.2015.9.29.0 /P:WIN_XP  /XML' + '\n');
+		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\n');
 		//gameServer.write('/FE:WIZARD /VERSION:2.02 /P:WIN32' + '\n');
 	});
 
-	var gameMessage = '';
-	var gameHandshake = 0;
 	function _handleGameResponse(data) {
-		if (gameHandshake < 3) {
-			gameHandshake++;
-		}
+		data = parseGameMessage(data.toString());
 
-		if (gameHandshake === 2) {
-			gameServer.write('\n\n');
+		if (data && data.indexOf('<data group="system" type="settings"') === 0) {
+			gameServer.write('\r\n\r\n');
 			client.connecting = false;
 			client.connected = true;
 			client.socket = gameServer;
 			client.websocket.send(JSON.stringify({action: 'authenticated'}));
-		} else {
-			gameMessage += data?data.toString():'';
+		}
 
-			if (gameMessage.charAt(gameMessage.length - 1) === '\n') {
-				gameMessage = gameMessage.trim();
-
-				client.websocket.send(JSON.stringify({message: gameMessage.toString()}));
-
-				gameMessage = '';
+		if (data) {
+			try {
+				client.websocket.send(JSON.stringify({message: data }));
+			} catch (error) {
+				console.log('CLIENT SOCKET ERROR:', error);
 			}
 		}
 	}

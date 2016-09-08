@@ -281,39 +281,33 @@ function connect() {
 		console.log('Game Connection Established with:', config.GAMEPORT, config.GAMEHOST);
 		gameServer.write(config.KEY + '\n');
 		gameServer.write('/FE:STORMFRONT /VERSION:1.0.1.26 /P:OSX /XML' + '\r\n');
+		//gameServer.write('/FE:WebFE /VERSION:0.2015.9.29.0 /P:WIN_XP  /XML' + '\n');
 		//gameServer.write('/FE:WIZARD /VERSION:2.02 /P:WIN32' + '\n');
 	});
 }
 
-
 var util = require('util');
-var stripDoubleLineBreaks = require('./utils/strip-double-lines');
 var parseGameMessage = require('./utils/parse-game-message');
-var messageBuffer = '';
 function _handleGameResponse(data) {
-	messageBuffer = stripDoubleLineBreaks(messageBuffer + (data?data.toString():''));
-	var lastLineBreak = messageBuffer.lastIndexOf('\n');
-	var parsable = (lastLineBreak > -1)?messageBuffer.substr(0, lastLineBreak):'';
-	messageBuffer = (lastLineBreak > -1)?messageBuffer.substr(lastLineBreak):messageBuffer;
-
-	parsable.split('\n').forEach(function (line) {
-		_parseGameResponse(line);
-	});
+	_parseGameResponse((data?data.toString():''));
 }
 
-var log = true;
+var log = false;
 var fs = require('fs');
 if (log) {
-	fs.writeFileSync('./cache/log.raw.txt', '');
-	fs.writeFileSync('./cache/log.parsed.txt', '');
+	fs.writeFileSync('./test/mocks/log.raw.txt', '');
+	fs.writeFileSync('./test/mocks/log.parsed.txt', '');
 }
 
 function _parseGameResponse(data) {
-	if (log) fs.appendFileSync('./cache/log.raw.txt', data + '\n');
-	data = parseGameMessage(data.toString().trim());
-	if (log) fs.appendFileSync('./cache/log.parsed.txt', data);
+	if (log) fs.appendFileSync('./test/mocks/log.raw.txt', data + '\n');
+	data = parseGameMessage(data.toString());
+	if (log) fs.appendFileSync('./test/mocks/log.parsed.txt', data);
 
-	if (data.indexOf('<settingsInfo') === 0) {
+	if (data.indexOf('<data group="system" type="settings"') === 0) {
+		gameServer.write('GOOD\r\n');
+		startPrompt();
+	} else if (data.indexOf('<mode id="GAME"/><settings client="1.0.1.26"') === 0) {
 		gameServer.write('GOOD\r\n');
 		startPrompt();
 	}
@@ -324,7 +318,6 @@ function _parseGameResponse(data) {
 	terminal.setPrompt('>>> ');
 	terminal.prompt(true);
 }
-
 
 var readline = require('readline');
 var terminal = readline.createInterface({
