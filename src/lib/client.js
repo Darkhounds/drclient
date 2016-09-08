@@ -86,14 +86,11 @@ function recieveMessage(data) {
 
 var dataParser = document.createElement('div');
 function parseLine(data) {
-	var raw = data;
-
 	dataParser.innerHTML = data;
 	data = dataParser.querySelector('data');
 	var dataGroup = data.getAttribute('group');
 	var dataType = data.getAttribute('type');
 	var dataId = data.getAttribute('id');
-
 
 	var line = document.createElement('div');
 
@@ -126,7 +123,13 @@ function parseLine(data) {
 	} else if (dataGroup === "game" && dataId === "room objs") {
 		roomObjects.innerHTML =  data.innerHTML;
 	} else if (dataGroup === "game" && dataId === "room players") {
-		roomPlayers.innerHTML =  data.innerHTML;
+		//roomPlayers.innerHTML =  data.innerHTML;
+		alsohere.innerHTML = '';
+		data.innerText.substr(data.innerText.indexOf(':')+1).split(', ').forEach(function (player) {
+			player.split('and ').forEach(function (player) {
+				alsohere.innerHTML += '<div>' + player.trim() + '</div>';
+			});
+		});
 	} else if (dataGroup === "room" && dataType === "obvious") {
 		roomExists.innerHTML =  data.innerHTML;
 	} else if (dataGroup === "game" && dataType === "room exits") {
