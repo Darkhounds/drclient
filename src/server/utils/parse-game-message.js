@@ -20,7 +20,7 @@ function parseGameMessage(message) {
 	}
 
 	if (mainBuffer.length === mainBufferLength && ++mainBufferLevel > 3) {
-		file.writeFileSync('./logs/dump.xml', mainBuffer + '\n================ DUMP END ================');
+		fs.appendFileSync('./logs/dump.xml', mainBuffer + '\n================ DUMP END ================');
 		parseGameMessage.flush();
 	}
 

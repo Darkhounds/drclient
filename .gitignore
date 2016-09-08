@@ -3,6 +3,7 @@ node_modules
 build
 cache
 dist/**/*.zip
+logs/**/*.xml
 *.iml
 *.iws
 *.ipr

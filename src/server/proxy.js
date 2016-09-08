@@ -22,7 +22,11 @@ function createServer() {
 			if (data.action === 'authenticate') {
 				_authenticate(client, data);
 			} else if (!client.connected) {
-				client.websocket.send({error: 'alreadyConnecting'});
+				try {
+					client.websocket.send({error: 'alreadyConnecting'});
+				} catch (error) {
+					console.log('CLIENT SOCKET ERROR:', error);
+				}
 			} else {
 				client.socket.write(data.message + '\n');
 			}
@@ -170,7 +174,11 @@ function _connect(client) {
 			client.connecting = false;
 			client.connected = true;
 			client.socket = gameServer;
-			client.websocket.send(JSON.stringify({action: 'authenticated'}));
+			try {
+				client.websocket.send(JSON.stringify({action: 'authenticated'}));
+			} catch (error) {
+				console.log('CLIENT SOCKET ERROR:', error);
+			}
 		}
 
 		if (data) {
