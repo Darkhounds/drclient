@@ -21,9 +21,16 @@
   },
   "homepage": "https://gitlab.com/darkhounds/drclient#README",
   "devDependencies": {
-    "fstream": "^1.0.10",
+    "archiver": "^1.1.0",
+    "chai": "^3.5.0",
+    "jsdom": "^9.4.5",
+    "mocha": "^3.0.2",
     "nw": "^0.17.0",
     "nw-builder": "^3.0.0",
-    "tar": "^2.2.1"
+    "sinon": "^1.17.5",
+    "sinon-chai": "^2.8.0",
+    "stringify": "^5.1.0",
+    "watch": "^0.19.2",
+    "ws": "^1.1.1"
   }
 }

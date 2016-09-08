@@ -2,10 +2,14 @@
   "name": "drclient",
   "version": "1.0.0",
   "description": "",
+  "node-main": "server/proxy.js",
   "main": "index.html",
   "author": "cainvampyr@gmail.com",
   "window": {
     "frame": true,
     "toolbar": true
+  },
+  "dependencies": {
+    "ws": "^1.1.1"
   }
 }

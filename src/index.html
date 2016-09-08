@@ -1,11 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" style="width: 100%; height: 100%; margin: 0px; padding: 0px;">
     <head>
         <meta charset="UTF-8">
         <title>DR Client</title>
-        <script>
-            require('./lib/');
-        </script>
     </head>
-    <body></body>
+    <body style="width: 100%; height: 100%; margin: 0px; padding: 0px;">
+        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+            <div style="display: flex; flex-direction: row; border: solid 1px;">
+                <input id="USERNAME" name="username" placeholder="username" type="text" style="display: table-cell;" value="">
+                <input id="PASSWORD" name="password" placeholder="password" type="password" style="display: table-cell;" value="">
+                <input id="CHARACTER" name="character" placeholder="charcter" type="text" style="display: table-cell;" value="">
+                <button id="LOGIN">Login</button>
+            </div>
+            <div style="display: flex; flex-direction: column; height: 100%">
+                <div style="display: flex; flex-direction: row; height: 200px;">
+                    <div id="ROOM_SCROLLER" style="width:100%; overflow-y: auto; border: solid 1px;">
+                        <div id="ROOM">
+                            <div class="title"></div>
+                            <div class="description"></div>
+                            <div class="exits"></div>
+                            <div class="extra"></div>
+                            <div class="objects"></div>
+                            <div class="players"></div>
+                        </div>
+                    </div>
+                    <div id="ALSO_HERE_SCROLLER" style="width: 400px; overflow-y: auto; border: solid 1px;">
+                        <div id="ALSO_HERE"></div>
+                    </div>
+                </div>
+                <div id="OUTPUT_SCROLLER" style="height: 100%; overflow-y: auto; border: solid 1px;">
+                    <div id="OUTPUT"></div>
+                </div>
+            </div>
+            <div style="display: flex; flex-direction: row; border: solid 1px;">
+                <input id="PROMPT" name="prompt" placeholder="Send command" type="text" style="display: table-cell; width: 100%"></input>
+                <button id="SEND" style="display: table-cell;">Send</button>
+            </div>
+        </div>
+
+        <script src="lib/client.js"></script>
+    </body>
 </html>
