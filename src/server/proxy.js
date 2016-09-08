@@ -136,14 +136,17 @@ function _authenticate(client, requestData) {
 
 		function _handleDisconnect(error) {
 			if (error) {
-				client.websocket.send({error: 'connectionFailed'});
+				if (client.websocket) {
+					client.websocket.send(JSON.stringify({error: 'connectionFailed'}));
+				} else {
+					consle.error(error);
+				}
 			} else {
 				_connect(client);
 			}
 
 			authServer.end();
 		}
-
 	}
 }
 

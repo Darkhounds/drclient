@@ -9,15 +9,23 @@ var roomObjects = room.querySelector('.players');
 var roomPlayers = room.querySelector('.objects');
 var roomExtra = room.querySelector('.extra');
 var roomExists = room.querySelector('.exits');
-
-
-
-
-
 var alsohere = document.querySelector('#ALSO_HERE');
 var output = document.querySelector('#OUTPUT');
 var prompt = document.querySelector('#PROMPT');
 var send = document.querySelector('#SEND');
+
+var search = {};
+(window.location.search || '').substr(1).split('&').forEach(function (pair) {
+	var parts = pair.split('=');
+	if (parts.length === 2) {
+		search[parts[0]] = parts[1];
+	}
+});
+console.log(search);
+
+username.value = search.username || '';
+password.value = search.password || '';
+character.value = search.character || '';
 
 login.addEventListener('click', function () {
 	authenticate(username.value, password.value, character.value);
