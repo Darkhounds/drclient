@@ -22,10 +22,21 @@ function createServer() {
 			if (data.action === 'authenticate') {
 				_authenticate(client, data);
 			} else if (!client.connected) {
-				client.websocket.send({error: 'alreadyConnecting'});
+				try {
+					client.websocket.send({error: 'alreadyConnecting'});
+				} catch (error) {
+					console.log('CLIENT SOCKET ERROR:', error);
+				}
 			} else {
 				client.socket.write(data.message + '\n');
 			}
+		});
+
+		socket.on('close', function close() {
+			if (client.socket) {
+				client.socket.destroy();
+			}
+			parseGameMessage.flush();
 		});
 	}
 }
@@ -136,14 +147,17 @@ function _authenticate(client, requestData) {
 
 		function _handleDisconnect(error) {
 			if (error) {
-				client.websocket.send({error: 'connectionFailed'});
+				if (client.websocket) {
+					client.websocket.send(JSON.stringify({error: 'connectionFailed'}));
+				} else {
+					consle.error(error);
+				}
 			} else {
 				_connect(client);
 			}
 
 			authServer.end();
 		}
-
 	}
 }
 
@@ -151,6 +165,11 @@ var util = require('util');
 function _connect(client) {
 	var gameServer = new net.Socket();
 	gameServer.on('data', _handleGameResponse);
+	gameServer.on('close', function () {
+		if (client.websocket) {
+			client.websocket.close();
+		}
+	});
 
 	gameServer.connect(client.config.GAMEPORT, client.config.GAMEHOST, function () {
 		gameServer.write(client.config.KEY + '\n');
@@ -167,7 +186,11 @@ function _connect(client) {
 			client.connecting = false;
 			client.connected = true;
 			client.socket = gameServer;
-			client.websocket.send(JSON.stringify({action: 'authenticated'}));
+			try {
+				client.websocket.send(JSON.stringify({action: 'authenticated'}));
+			} catch (error) {
+				console.log('CLIENT SOCKET ERROR:', error);
+			}
 		}
 
 		if (data) {

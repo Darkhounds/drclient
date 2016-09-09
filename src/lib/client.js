@@ -9,15 +9,23 @@ var roomObjects = room.querySelector('.players');
 var roomPlayers = room.querySelector('.objects');
 var roomExtra = room.querySelector('.extra');
 var roomExists = room.querySelector('.exits');
-
-
-
-
-
 var alsohere = document.querySelector('#ALSO_HERE');
 var output = document.querySelector('#OUTPUT');
 var prompt = document.querySelector('#PROMPT');
 var send = document.querySelector('#SEND');
+
+var search = {};
+(window.location.search || '').substr(1).split('&').forEach(function (pair) {
+	var parts = pair.split('=');
+	if (parts.length === 2) {
+		search[parts[0]] = parts[1];
+	}
+});
+console.log(search);
+
+username.value = search.username || '';
+password.value = search.password || '';
+character.value = search.character || '';
 
 login.addEventListener('click', function () {
 	authenticate(username.value, password.value, character.value);
@@ -78,14 +86,11 @@ function recieveMessage(data) {
 
 var dataParser = document.createElement('div');
 function parseLine(data) {
-	var raw = data;
-
 	dataParser.innerHTML = data;
 	data = dataParser.querySelector('data');
 	var dataGroup = data.getAttribute('group');
 	var dataType = data.getAttribute('type');
 	var dataId = data.getAttribute('id');
-
 
 	var line = document.createElement('div');
 
@@ -118,7 +123,13 @@ function parseLine(data) {
 	} else if (dataGroup === "game" && dataId === "room objs") {
 		roomObjects.innerHTML =  data.innerHTML;
 	} else if (dataGroup === "game" && dataId === "room players") {
-		roomPlayers.innerHTML =  data.innerHTML;
+		//roomPlayers.innerHTML =  data.innerHTML;
+		alsohere.innerHTML = '';
+		data.innerText.substr(data.innerText.indexOf(':')+1).split(', ').forEach(function (player) {
+			player.split('and ').forEach(function (player) {
+				alsohere.innerHTML += '<div>' + player.trim() + '</div>';
+			});
+		});
 	} else if (dataGroup === "room" && dataType === "obvious") {
 		roomExists.innerHTML =  data.innerHTML;
 	} else if (dataGroup === "game" && dataType === "room exits") {
