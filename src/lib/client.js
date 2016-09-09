@@ -5,8 +5,7 @@ var login = document.querySelector('#LOGIN');
 var room = document.querySelector('#ROOM');
 var roomTitle = room.querySelector('.title');
 var roomDescription = room.querySelector('.description');
-var roomObjects = room.querySelector('.players');
-var roomPlayers = room.querySelector('.objects');
+var roomObjects = room.querySelector('.objects');
 var roomExtra = room.querySelector('.extra');
 var roomExists = room.querySelector('.exits');
 var alsohere = document.querySelector('#ALSO_HERE');
@@ -88,6 +87,7 @@ var dataParser = document.createElement('div');
 function parseLine(data) {
 	dataParser.innerHTML = data;
 	data = dataParser.querySelector('data');
+
 	var dataGroup = data.getAttribute('group');
 	var dataType = data.getAttribute('type');
 	var dataId = data.getAttribute('id');
@@ -96,6 +96,16 @@ function parseLine(data) {
 
 	if (dataGroup === "game" && dataType === "text") {
 		line.innerText = data.innerText;
+		appendToOutput(line);
+	} else if (dataGroup === "game" && dataId === "roomName") {
+		line.innerText =  data.innerText;
+		appendToOutput(line);
+	} else if (dataGroup === "game" && dataId === "roomDesc") {
+		line.innerText =  data.innerText;
+		appendToOutput(line);
+	} else if (dataGroup === "game" && dataType === "obvious exits") {
+		var exitType = data.getAttribute('exit-type');
+		line.innerText =  'Obvious ' + exitType + ': ' + data.innerText;
 		appendToOutput(line);
 	} else if (dataGroup === "game" && dataType === "bold") {
 		line.innerHTML = '<b>' + data.innerText + '</b>';
@@ -114,26 +124,25 @@ function parseLine(data) {
 			.replace(/<d>/ig, '<i>').replace(/<\/d>/ig, '</i>')
 			.replace(/\n/ig, '<br/>');
 		appendToOutput(line);
-	} else if (dataGroup === "game" && dataId === "roomName") {
-		roomTitle.innerHTML =  data.innerHTML;
-	} else if (dataGroup === "game" && dataId === "roomDesc") {
+	} else if (dataGroup === "ui" && dataType === "window" && dataId === "room") {
+		roomTitle.innerHTML =  data.getAttribute("subtitle");
+	} else if (dataGroup === "ui" && dataType === "component" && dataId === "room desc") {
 		roomDescription.innerHTML =  data.innerHTML;
-	} else if (dataGroup === "game" && dataId === "room extra") {
+	} else if (dataGroup === "ui" && dataType === "component" && dataId === "room exits") {
+		roomExists.innerHTML =  data.innerHTML;
+	} else if (dataGroup === "ui" && dataType === "component" && dataId === "room extra") {
 		roomExtra.innerHTML =  data.innerHTML;
-	} else if (dataGroup === "game" && dataId === "room objs") {
+	} else if (dataGroup === "ui" && dataType === "component" && dataId === "room objs") {
 		roomObjects.innerHTML =  data.innerHTML;
-	} else if (dataGroup === "game" && dataId === "room players") {
-		//roomPlayers.innerHTML =  data.innerHTML;
+	} else if (dataGroup === "ui" && dataType === "component" && dataId === "room players") {
 		alsohere.innerHTML = '';
 		data.innerText.substr(data.innerText.indexOf(':')+1).split(', ').forEach(function (player) {
 			player.split('and ').forEach(function (player) {
 				alsohere.innerHTML += '<div>' + player.trim() + '</div>';
 			});
 		});
-	} else if (dataGroup === "room" && dataType === "obvious") {
-		roomExists.innerHTML =  data.innerHTML;
-	} else if (dataGroup === "game" && dataType === "room exits") {
-		roomExists.innerHTML =  data.innerHTML;
+	} else if (dataGroup === "ui" && dataType === "prompt") {
+
 	} else {
 		console.log('Ignored:', data);
 	}

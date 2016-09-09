@@ -301,22 +301,23 @@ if (log) {
 
 function _parseGameResponse(data) {
 	if (log) fs.appendFileSync('./test/mocks/log.raw.txt', data + '\n');
-	data = parseGameMessage(data.toString());
-	if (log) fs.appendFileSync('./test/mocks/log.parsed.txt', data);
+	parseGameMessage(data.toString()).forEach(function (data) {
+		if (log) fs.appendFileSync('./test/mocks/log.parsed.txt', data);
 
-	if (data.indexOf('<data group="system" type="settings"') === 0) {
-		gameServer.write('GOOD\r\n');
-		startPrompt();
-	} else if (data.indexOf('<mode id="GAME"/><settings client="1.0.1.26"') === 0) {
-		gameServer.write('GOOD\r\n');
-		startPrompt();
-	}
+		if (data.indexOf('<data group="system" type="settings"') === 0) {
+			gameServer.write('GOOD\r\n');
+			startPrompt();
+		} else if (data.indexOf('<mode id="GAME"/><settings client="1.0.1.26"') === 0) {
+			gameServer.write('GOOD\r\n');
+			startPrompt();
+		}
 
-	terminal.setPrompt('');
-	terminal.prompt(true);
-	process.stdout.write(data);
-	terminal.setPrompt('>>> ');
-	terminal.prompt(true);
+		terminal.setPrompt('');
+		terminal.prompt(true);
+		process.stdout.write(data);
+		terminal.setPrompt('>>> ');
+		terminal.prompt(true);
+	});
 }
 
 var readline = require('readline');

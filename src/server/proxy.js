@@ -179,27 +179,29 @@ function _connect(client) {
 	});
 
 	function _handleGameResponse(data) {
-		data = parseGameMessage(data.toString());
-
-		if (data && data.indexOf('<data group="system" type="settings"') === 0) {
-			gameServer.write('\r\n\r\n');
-			client.connecting = false;
-			client.connected = true;
-			client.socket = gameServer;
-			try {
-				client.websocket.send(JSON.stringify({action: 'authenticated'}));
-			} catch (error) {
-				console.log('CLIENT SOCKET ERROR:', error);
+		parseGameMessage(data.toString()).forEach(function (data) {
+			if (data && data.indexOf('<data group="system" type="settings"') === 0) {
+				gameServer.write('\r\n\r\n');
+				client.connecting = false;
+				client.connected = true;
+				client.socket = gameServer;
+				try {
+					client.websocket.send(JSON.stringify({action: 'authenticated'}));
+				} catch (error) {
+					console.log('CLIENT SOCKET ERROR:', error);
+				}
 			}
-		}
 
-		if (data) {
-			try {
-				client.websocket.send(JSON.stringify({message: data }));
-			} catch (error) {
-				console.log('CLIENT SOCKET ERROR:', error);
+			if (data) {
+				try {
+					client.websocket.send(JSON.stringify({message: data }));
+				} catch (error) {
+					console.log('CLIENT SOCKET ERROR:', error);
+				}
 			}
-		}
+		});
+
+
 	}
 }
 
