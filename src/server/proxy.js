@@ -31,6 +31,13 @@ function createServer() {
 				client.socket.write(data.message + '\n');
 			}
 		});
+
+		socket.on('close', function close() {
+			if (client.socket) {
+				client.socket.destroy();
+			}
+			parseGameMessage.flush();
+		});
 	}
 }
 createServer();
@@ -158,6 +165,11 @@ var util = require('util');
 function _connect(client) {
 	var gameServer = new net.Socket();
 	gameServer.on('data', _handleGameResponse);
+	gameServer.on('close', function () {
+		if (client.websocket) {
+			client.websocket.close();
+		}
+	});
 
 	gameServer.connect(client.config.GAMEPORT, client.config.GAMEHOST, function () {
 		gameServer.write(client.config.KEY + '\n');
