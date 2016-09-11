@@ -4,11 +4,14 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "bundle": "nwbuild -o ./build --cacheDir ./cache -v latest -p win64,osx64,linux64 src",
+    "compile-server": "ncp ./src/server package/server",
+    "compile-client": "browserify ./src/lib/client.js -t [uglifyify] --debug | exorcist ./package/lib/client.js.map > ./package/lib/client.js ",
+    "compile": "npm run compile-server && npm run compile-client",
+    "bundle": "npm run compile && npm --prefix ./package install && nwbuild -o ./build --cacheDir ./cache -v latest -p win64,osx64,linux64 package",
     "package-win": "node scripts/package.js win",
     "package-osx": "node scripts/package.js osx",
     "package-linux": "node scripts/package.js linux",
-    "package": "npm run package-win && npm run package-osx && npm run package-linux"
+    "package": "npm run bundle && npm run package-win && npm run package-osx && npm run package-linux"
   },
   "repository": {
     "type": "git",
@@ -22,14 +25,18 @@
   "homepage": "https://gitlab.com/darkhounds/drclient#README",
   "devDependencies": {
     "archiver": "^1.1.0",
+    "browserify": "^13.1.0",
     "chai": "^3.5.0",
+    "exorcist": "^0.4.0",
     "jsdom": "^9.4.5",
     "mocha": "^3.0.2",
+    "ncp": "^2.0.0",
     "nw": "^0.17.0",
     "nw-builder": "^3.0.0",
     "sinon": "^1.17.5",
     "sinon-chai": "^2.8.0",
     "stringify": "^5.1.0",
+    "uglifyify": "^3.0.3",
     "watch": "^0.19.2",
     "ws": "^1.1.1"
   }

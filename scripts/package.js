@@ -7,7 +7,6 @@ var targetPath = './dist/' + target + '/drclient.zip';
 var output = fs.createWriteStream(targetPath);
 var zipArchive = archiver('zip', {level: 9});
 
-
 output.on('close', function() {
 	console.log('done with the zip: ', targetPath);
 });

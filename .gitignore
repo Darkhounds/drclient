@@ -4,6 +4,9 @@ build
 cache
 dist/**/*.zip
 logs/**/*.xml
+package/logs/**/*.xml
+package/server/**/*.js*
+package/lib/**/*.js*
 *.iml
 *.iws
 *.ipr
