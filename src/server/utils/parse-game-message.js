@@ -1,6 +1,7 @@
 var fs = require('fs');
 var util = require('util');
 var stripDoubleLineBreaks = require('./strip-double-lines');
+var getAppRoot = require('./app-root');
 
 var mainBuffer = '';
 var mainBufferLevel = 0;
@@ -20,7 +21,7 @@ function parseGameMessage(message) {
 	}
 
 	if (mainBuffer.length === mainBufferLength && ++mainBufferLevel > 5) {
-		fs.appendFileSync('./logs/dump.xml', '\n' + mainBuffer + '\n================ DUMP END ================');
+		fs.appendFileSync(getAppRoot() + '/dump.xml', '\n' + mainBuffer + '\n================ DUMP END ================');
 		parseGameMessage.flush();
 	}
 
@@ -439,7 +440,8 @@ module.exports = parseGameMessage;
 
 function debug() {
 	var raw = fs.readFile('./test/mocks/log.raw.txt', function (err, data) {
+
 		fs.writeFileSync('./cache/log.parsed.xml', parseGameMessage(data));
 	});
 }
-//debug();
+// debug();
